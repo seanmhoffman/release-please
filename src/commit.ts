@@ -422,7 +422,7 @@ export function parseConventionalCommits(
 
   for (const commit of commits) {
     for (const commitMessage of splitMessages(
-      preprocessCommitMessage(commit)
+      preprocessCommitMessage(commit, extraPrefixMapping)
     )) {
       try {
         for (const parsedCommit of parseCommits(commitMessage)) {
@@ -486,8 +486,17 @@ export function parseConventionalCommits(
   return conventionalCommits;
 }
 
-function preprocessCommitMessage(commit: Commit): string {
+// Leading emoji/variation-selector, optional whitespace. Used to support
+// gitmoji-style subjects like "✨ feat: …" and "✨ add feature".
+const LEADING_EMOJI_RE =
+  /^(\p{Extended_Pictographic}|\p{Emoji_Presentation})\uFE0F?\s*/u;
+
+function preprocessCommitMessage(
+  commit: Commit,
+  extraPrefixMapping?: Record<string, string>
+): string {
   // look for 'BEGIN_COMMIT_OVERRIDE' section of pull request body
+  let message = commit.message;
   if (commit.pullRequest) {
     const overrideMessage = (
       commit.pullRequest.body.split('BEGIN_COMMIT_OVERRIDE')[1] || ''
@@ -495,8 +504,44 @@ function preprocessCommitMessage(commit: Commit): string {
       .split('END_COMMIT_OVERRIDE')[0]
       .trim();
     if (overrideMessage) {
-      return overrideMessage;
+      message = overrideMessage;
     }
   }
-  return commit.message;
+  return normalizeEmojiPrefixedMessage(message, extraPrefixMapping);
+}
+
+/**
+ * Normalize gitmoji-prefixed subjects so conventional-commits parsing works:
+ * - "✨ feat: add thing" → "feat: add thing" (strip decorative emoji)
+ * - "✨ add thing" with mapping { "✨": "feat" } → "feat: add thing"
+ * - "✨: add thing" left as-is (mapped later via parsed type)
+ */
+function normalizeEmojiPrefixedMessage(
+  message: string,
+  extraPrefixMapping?: Record<string, string>
+): string {
+  const match = message.match(LEADING_EMOJI_RE);
+  if (!match) {
+    return message;
+  }
+  const emoji = match[1];
+  const rest = message.slice(match[0].length);
+
+  // Already conventional after the emoji (✨ feat: … / ✨ feat(scope)!: …)
+  if (/^[a-z]+(\([^)]*\))?(!)?:\s*/i.test(rest)) {
+    return rest;
+  }
+
+  // Emoji used as conventional type with colon already (✨: …) — leave alone
+  if (/^\uFE0F?:\s*/.test(message.slice(emoji.length))) {
+    return message;
+  }
+
+  // Pure gitmoji subject (✨ add thing) → rewrite via mapping when configured
+  if (extraPrefixMapping && emoji in extraPrefixMapping) {
+    const mappedType = extraPrefixMapping[emoji];
+    return `${mappedType}: ${rest}`;
+  }
+
+  return message;
 }
