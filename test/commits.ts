@@ -367,6 +367,30 @@ describe('parseConventionalCommits', () => {
     expect(conventionalCommits[1].bareMessage).to.equal('add new feature');
     expect(conventionalCommits[2].type).to.equal('feat');
   });
+
+  it('strips decorative emoji before a conventional type', async () => {
+    const commits = [
+      buildMockCommit('✨ feat: add cool thing'),
+      buildMockCommit('🐛 fix(api): handle nil'),
+    ];
+    const conventionalCommits = parseConventionalCommits(commits);
+    expect(conventionalCommits).lengthOf(2);
+    expect(conventionalCommits[0].type).to.equal('feat');
+    expect(conventionalCommits[0].bareMessage).to.equal('add cool thing');
+    expect(conventionalCommits[1].type).to.equal('fix');
+    expect(conventionalCommits[1].scope).to.equal('api');
+    expect(conventionalCommits[1].bareMessage).to.equal('handle nil');
+  });
+
+  it('rewrites gitmoji subjects via extra-prefix-mapping', async () => {
+    const commits = [buildMockCommit('✨ add cool thing')];
+    const conventionalCommits = parseConventionalCommits(commits, undefined, {
+      '✨': 'feat',
+    });
+    expect(conventionalCommits).lengthOf(1);
+    expect(conventionalCommits[0].type).to.equal('feat');
+    expect(conventionalCommits[0].bareMessage).to.equal('add cool thing');
+  });
 });
 
 function assertHasCommit(
