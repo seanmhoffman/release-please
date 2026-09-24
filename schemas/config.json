@@ -478,6 +478,7 @@
     "release-type": true,
     "bump-minor-pre-major": true,
     "bump-patch-for-minor-pre-major": true,
+    "extra-prefix-mapping": true,
     "versioning": true,
     "changelog-sections": true,
     "release-as": true,

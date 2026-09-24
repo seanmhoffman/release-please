@@ -1754,6 +1754,8 @@ function mergeReleaserConfig(
     bumpPatchForMinorPreMajor:
       pathConfig.bumpPatchForMinorPreMajor ??
       defaultConfig.bumpPatchForMinorPreMajor,
+    extraPrefixMapping:
+      pathConfig.extraPrefixMapping ?? defaultConfig.extraPrefixMapping,
     prereleaseType: pathConfig.prereleaseType ?? defaultConfig.prereleaseType,
     versioning: pathConfig.versioning ?? defaultConfig.versioning,
     changelogSections:

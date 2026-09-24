@@ -391,6 +391,20 @@ describe('parseConventionalCommits', () => {
     expect(conventionalCommits[0].type).to.equal('feat');
     expect(conventionalCommits[0].bareMessage).to.equal('add cool thing');
   });
+
+  it('ignores inherited object keys when applying extra-prefix-mapping', async () => {
+    const commits = [
+      buildMockCommit('constructor: add thing'),
+      buildMockCommit('toString: fix thing'),
+    ];
+    const conventionalCommits = parseConventionalCommits(commits, undefined, {
+      change: 'fix',
+    });
+    expect(conventionalCommits.map(commit => commit.type)).to.deep.equal([
+      'constructor',
+      'toString',
+    ]);
+  });
 });
 
 function assertHasCommit(
