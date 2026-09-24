@@ -1,0 +1,13 @@
+{
+  "release-type": "simple",
+  "extra-prefix-mapping": {"change": "fix"},
+  "packages": {
+    ".": {
+      "component": "root",
+      "extra-prefix-mapping": {"update": "feat"}
+    },
+    "node-lib": {
+      "component": "node-lib"
+    }
+  }
+}

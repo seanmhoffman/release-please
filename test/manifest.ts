@@ -537,6 +537,37 @@ describe('Manifest', () => {
         'path-ignore',
       ]);
     });
+    it('should read extra prefix mapping from manifest', async () => {
+      const getFileContentsStub = sandbox.stub(
+        github,
+        'getFileContentsOnBranch'
+      );
+      getFileContentsStub
+        .withArgs('release-please-config.json', 'main')
+        .resolves(
+          buildGitHubFileContent(
+            fixturesPath,
+            'manifest/config/extra-prefix-mapping.json'
+          )
+        )
+        .withArgs('.release-please-manifest.json', 'main')
+        .resolves(
+          buildGitHubFileContent(
+            fixturesPath,
+            'manifest/versions/versions.json'
+          )
+        );
+      const manifest = await Manifest.fromManifest(
+        github,
+        github.repository.defaultBranch
+      );
+      expect(manifest.repositoryConfig['.'].extraPrefixMapping).to.deep.equal({
+        update: 'feat',
+      });
+      expect(
+        manifest.repositoryConfig['node-lib'].extraPrefixMapping
+      ).to.deep.equal({change: 'fix'});
+    });
     it('should build simple plugins from manifest', async () => {
       const getFileContentsStub = sandbox.stub(
         github,
