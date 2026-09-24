@@ -402,6 +402,17 @@ function splitMessages(message: string): string[] {
   return [...conventionalCommits, ...messages.slice(1)];
 }
 
+// Own keys only: a prototype key such as "constructor" must not match.
+function hasMapping(
+  extraPrefixMapping: Record<string, string> | undefined,
+  key: string
+): extraPrefixMapping is Record<string, string> {
+  return (
+    extraPrefixMapping !== undefined &&
+    Object.prototype.hasOwnProperty.call(extraPrefixMapping, key)
+  );
+}
+
 /**
  * Given a list of raw commits, parse and expand into conventional commits.
  *
@@ -432,7 +443,7 @@ export function parseConventionalCommits(
 
           // Check if the parsed type should be remapped via extraPrefixMapping
           let finalType = parsedCommit.type;
-          if (extraPrefixMapping && parsedCommit.type in extraPrefixMapping) {
+          if (hasMapping(extraPrefixMapping, parsedCommit.type)) {
             finalType = extraPrefixMapping[parsedCommit.type];
             logger.debug(
               `remapping commit type '${parsedCommit.type}' to '${finalType}': ${commit.sha}`
@@ -460,7 +471,7 @@ export function parseConventionalCommits(
         );
         logger.debug(`error message: ${_err}`);
         // Check for empty string mapping (non-conventional commits)
-        if (extraPrefixMapping && '' in extraPrefixMapping) {
+        if (hasMapping(extraPrefixMapping, '')) {
           const mappedType = extraPrefixMapping[''];
           const bareMessage = commitMessage.split('\n')[0];
           logger.debug(
@@ -538,7 +549,7 @@ function normalizeEmojiPrefixedMessage(
   }
 
   // Pure gitmoji subject (✨ add thing) → rewrite via mapping when configured
-  if (extraPrefixMapping && emoji in extraPrefixMapping) {
+  if (hasMapping(extraPrefixMapping, emoji)) {
     const mappedType = extraPrefixMapping[emoji];
     return `${mappedType}: ${rest}`;
   }
